@@ -1,0 +1,8 @@
+name = "chatgpt-takeout-proxy"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+
+# Uncomment and set to the GitHub Pages origin to restrict who can use this
+# proxy. Leave commented (or set to "*") to allow any origin.
+# [vars]
+# ALLOWED_ORIGIN = "https://<your-github-username>.github.io"

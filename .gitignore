@@ -1,0 +1,27 @@
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.python-version
+
+# Node
+node_modules/
+.wrangler/
+dist/
+
+# Local outputs
+gpt_exports/
+exports/
+*.zip
+
+# Credentials (never commit)
+.env
+*.curl
+*.token
+cookies.txt
