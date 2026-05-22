@@ -10,8 +10,51 @@ const statusEl = $('status');
 const bar = $('bar');
 
 const PROXY_KEY = 'chatgpt-takeout.proxy';
-$('proxy').value = localStorage.getItem(PROXY_KEY) || '';
-$('proxy').addEventListener('change', () => localStorage.setItem(PROXY_KEY, $('proxy').value.trim()));
+const DEFAULT_PROXY = (window.CHATGPT_TAKEOUT_PROXY || '').trim().replace(/\/+$/, '');
+const userOverride = localStorage.getItem(PROXY_KEY) || '';
+
+// If we have a built-in default proxy AND the user has not explicitly overridden it,
+// hide the input and show a small "using official proxy" badge.
+function applyProxyDefault() {
+  const input = $('proxy');
+  const badge = $('proxyBadge');
+  const override = $('proxyOverride');
+  const hint = $('proxyHint');
+  if (DEFAULT_PROXY && !userOverride) {
+    input.style.display = 'none';
+    badge.style.display = '';
+    override.style.display = '';
+    hint.textContent = `Using the official proxy at ${DEFAULT_PROXY}. The proxy only forwards requests and stores nothing.`;
+    input.value = DEFAULT_PROXY;
+  } else {
+    input.value = userOverride || DEFAULT_PROXY || '';
+    input.style.display = '';
+    if (DEFAULT_PROXY) {
+      override.style.display = 'none';
+      badge.style.display = 'none';
+    }
+  }
+}
+applyProxyDefault();
+
+$('proxy').addEventListener('change', () => {
+  const v = $('proxy').value.trim();
+  if (v && v !== DEFAULT_PROXY) localStorage.setItem(PROXY_KEY, v);
+  else localStorage.removeItem(PROXY_KEY);
+});
+
+const useCustom = $('useCustom');
+if (useCustom) {
+  useCustom.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.setItem(PROXY_KEY, ' ');  // sentinel: force showing input
+    $('proxy').value = '';
+    $('proxy').style.display = '';
+    $('proxyBadge').style.display = 'none';
+    $('proxyOverride').style.display = 'none';
+    $('proxyHint').innerHTML = 'Deploy the <a href="https://github.com/sci-m-wang/chatgpt-takeout/tree/main/worker" target="_blank" rel="noopener">tiny Cloudflare Worker</a> from this repo and paste the URL.';
+  });
+}
 
 function log(msg) {
   logEl.textContent += msg + '\n';

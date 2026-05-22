@@ -32,51 +32,37 @@ you:
                 └──────────┬─────────────┘
                            │ HTTPS
                 ┌──────────▼─────────────┐
-                │  Your Cloudflare       │  (you deploy this; tiny, stateless,
-                │  Worker (CORS proxy)   │   forwards only /backend-api/*)
+                │  Cloudflare Worker     │  (official one is pre-deployed and
+                │  (CORS proxy)          │   ready; you can self-host instead)
                 └──────────┬─────────────┘
                            │
                   https://chatgpt.com
 ```
 
 The web page parses a request you copied from your browser (so it has your
-Authorization header and cookies), proxies the calls through **your own**
-Cloudflare Worker (free tier is plenty), and downloads/renders/zips everything
-locally. The proxy exists only because `chatgpt.com` does not send CORS
-headers; nothing about your data ever touches a server you do not control.
+Authorization header and cookies), proxies the calls through a Cloudflare
+Worker (because `chatgpt.com` does not send CORS headers), and
+downloads/renders/zips everything **inside your browser**. The Worker is
+**stateless** &mdash; it does not log, store, or read your credentials, it only
+forwards the bytes. Source: [`worker/src/index.js`](./worker/src/index.js).
 
 ---
 
 ## Option A — Web UI (recommended)
 
-### Prerequisites
+Just open <https://sci-m-wang.github.io/chatgpt-takeout/> and follow the
+on-screen steps:
 
-1. A free Cloudflare account.
-2. Node.js (only to run Cloudflare's `wrangler` CLI once).
-
-### Steps
-
-1. **Deploy the Worker.** From this repo:
-
-   ```bash
-   cd worker
-   npm install -g wrangler
-   wrangler login
-   wrangler deploy
-   ```
-
-   You will get a URL like `https://chatgpt-takeout-proxy.<account>.workers.dev`.
-
-2. **Open the web UI:** <https://sci-m-wang.github.io/chatgpt-takeout/>
-
-3. Paste the Worker URL into **Proxy URL**.
-
-4. Open [chatgpt.com](https://chatgpt.com) signed in →  DevTools → **Network** →
+1. Open [chatgpt.com](https://chatgpt.com) signed in →  DevTools → **Network** →
    reload → find a request to `/backend-api/conversations` → right-click →
-   **Copy** → **Copy as cURL**. Paste it into the **cURL** box.
-
-5. Click **Start export**. When it finishes, click **Download archive (.zip)**
+   **Copy** → **Copy as cURL**.
+2. Paste the whole cURL into the web UI.
+3. Click **Start export**. When it finishes, click **Download archive (.zip)**
    or **Open index in new tab** to preview.
+
+The page ships a pre-configured Worker URL so it works out of the box. If you
+prefer to run your own proxy (see [Privacy](#privacy)), click *Use my own
+proxy instead* in the UI and follow the [worker README](./worker/README.md).
 
 The zip contains:
 
@@ -90,20 +76,23 @@ chatgpt-takeout-YYYY-MM-DD.zip
     └── <title>_<id>.html
 ```
 
-> **Privacy:** the only network calls from your browser are
-> `your-page → your-worker → chatgpt.com`. No analytics, no third-party
-> requests, no logging. See [`worker/src/index.js`](./worker/src/index.js).
+## Privacy
 
-### Tighten the Worker (recommended)
+The only network calls from your browser are
+`your-page → Worker → chatgpt.com`. The default Worker
 
-Edit `worker/wrangler.toml` and uncomment:
+- holds **no state** (stateless `fetch` forwarder; entire source is
+  &lt;100 lines, [auditable here](./worker/src/index.js)),
+- writes **no logs** (no `console.log`, no analytics binding),
+- is restricted by `ALLOWED_ORIGIN` to the GitHub Pages site, so it cannot
+  be used as an open relay,
+- and crucially, **never reads** your `Authorization` header &mdash; it just
+  passes the bytes upstream.
 
-```toml
-[vars]
-ALLOWED_ORIGIN = "https://sci-m-wang.github.io"
-```
-
-Redeploy. Now only the GitHub Pages site can use your proxy.
+That said, *in theory* a proxy operator can passively observe headers.
+If your threat model rules that out, **self-host in 60 seconds** &mdash; see the
+[worker README](./worker/README.md) and click *Use my own proxy instead* in
+the web UI.
 
 ---
 
@@ -137,10 +126,9 @@ Flags: `--skip-assets`, `--skip-render`, `--rate 0.5`, `--limit 100`.
 ## FAQ
 
 **Will my cookies / tokens leak?**
-The web page never sends them anywhere except to the Worker URL you control.
-The Worker itself is &lt;100 lines of JavaScript (auditable in
-[`worker/src/index.js`](./worker/src/index.js)), holds no state, and writes no
-logs.
+See the [Privacy section](#privacy) above. Short answer: the default proxy is
+&lt;100 lines of auditable JS, stateless, log-free, and origin-locked; if you
+want zero trust in any third party, self-host the Worker on your own account.
 
 **Why not just call `chatgpt.com` directly from the page?**
 `chatgpt.com` does not return `Access-Control-Allow-Origin`, so the browser

@@ -13,12 +13,16 @@
 </header>
 
 <main>
-  <section class="card">
-    <h2>1 · Proxy URL</h2>
-    <p class="muted">ChatGPT blocks browser requests (CORS). Deploy the
+  <section class="card" id="proxyCard">
+    <h2>1 · Proxy URL <span class="badge" id="proxyBadge" style="display:none">using official proxy</span></h2>
+    <p class="muted" id="proxyHint">ChatGPT blocks browser requests (CORS). Deploy the
       <a href="https://github.com/sci-m-wang/chatgpt-takeout/tree/main/worker" target="_blank" rel="noopener">tiny Cloudflare Worker</a>
-      from this repo (free, 60 seconds) and paste the URL below.</p>
+      from this repo (free, 60 seconds) and paste the URL below. If you don't want to self-host,
+      see the <a href="https://github.com/sci-m-wang/chatgpt-takeout#privacy" target="_blank" rel="noopener">privacy notes</a>.</p>
     <input id="proxy" type="url" placeholder="https://chatgpt-takeout-proxy.<your-account>.workers.dev">
+    <p class="muted" id="proxyOverride" style="display:none;margin-top:8px">
+      <a href="#" id="useCustom">Use my own proxy instead</a>
+    </p>
   </section>
 
   <section class="card">
@@ -64,6 +68,7 @@
 </footer>
 
 <script src="vendor/jszip.min.js"></script>
+<script src="config.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>
